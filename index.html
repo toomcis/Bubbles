@@ -4,8 +4,56 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bubbles — Live Wallpaper by Toomcis</title>
+
+<!-- ── SEO ── -->
+<meta name="description" content="Bubbles is a free animated live wallpaper for Lively Wallpaper. Flowing organic blob shapes generated with a WebGL cubic noise shader. Fully customizable.">
+<meta name="author" content="Toomcis">
+<meta name="keywords" content="lively wallpaper, live wallpaper, webgl shader, animated wallpaper, windows wallpaper, bubbles, noise shader, free wallpaper">
+<link rel="canonical" href="https://bubbles.toomcis.eu/">
+
+<!-- ── Open Graph ── -->
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://bubbles.toomcis.eu/">
+<meta property="og:title" content="Bubbles — Live Wallpaper by Toomcis">
+<meta property="og:description" content="Flowing organic blob shapes generated with a WebGL cubic noise shader. Free animated wallpaper for Lively Wallpaper — fully customizable colors, speed & thickness.">
+<meta property="og:image" content="https://bubbles.toomcis.eu/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="Bubbles by Toomcis">
+
+<!-- ── Twitter Card ── -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:url" content="https://bubbles.toomcis.eu/">
+<meta name="twitter:title" content="Bubbles — Live Wallpaper by Toomcis">
+<meta name="twitter:description" content="Flowing organic blob shapes generated with a WebGL cubic noise shader. Free animated wallpaper for Lively Wallpaper.">
+<meta name="twitter:image" content="https://bubbles.toomcis.eu/og.png">
+
+<!-- ── Favicon ── -->
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+
+<!-- ── Fonts ── -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<!-- ── JSON-LD structured data ── -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Bubbles",
+  "description": "Animated live wallpaper for Lively Wallpaper generating flowing organic blob shapes via a WebGL cubic noise shader.",
+  "url": "https://bubbles.toomcis.eu/",
+  "author": { "@type": "Person", "name": "Toomcis", "url": "https://toomcis.eu" },
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "Windows",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "downloadUrl": "https://github.com/toomcis/Bubbles/releases/latest",
+  "softwareVersion": "latest",
+  "license": "https://github.com/toomcis/Bubbles/blob/main/LICENSE"
+}
+</script>
+
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -14,7 +62,7 @@
     --surface: #111111;
     --border: #222222;
     --text: #e8e8e0;
-    --muted: #666660;
+    --muted: #555550;
     --accent: #ffffff;
     --accent2: #c8ff6e;
     --radius: 6px;
@@ -30,6 +78,12 @@
     font-size: 13px;
     line-height: 1.6;
     overflow-x: hidden;
+    opacity: 0;
+    animation: pageIn 0.5s ease 0.1s forwards;
+  }
+
+  @keyframes pageIn {
+    to { opacity: 1; }
   }
 
   /* ── NAV ── */
@@ -68,7 +122,6 @@
     text-transform: uppercase;
     transition: color 0.2s;
   }
-
   .nav-links a:hover { color: var(--text); }
 
   .nav-cta {
@@ -84,9 +137,12 @@
     font-weight: 500;
     letter-spacing: 0.05em;
     text-transform: uppercase;
-    transition: opacity 0.2s;
+    transition: opacity 0.2s, transform 0.15s;
   }
-  .nav-cta:hover { opacity: 0.85; }
+  .nav-cta:hover { opacity: 0.85; transform: translateY(-1px); }
+
+  /* ── MOBILE NAV ── */
+  .nav-links-mobile { display: none; }
 
   /* ── HERO / PREVIEW ── */
   #preview-section {
@@ -104,17 +160,14 @@
   }
 
   #bubbles-frame {
-    width: 100%;
-    height: 100%;
-    border: none;
-    display: block;
+    width: 100%; height: 100%;
+    border: none; display: block;
   }
 
-  /* Controls toggle button */
+  /* Controls toggle */
   #controls-toggle {
     position: absolute;
-    top: 20px;
-    right: 20px;
+    top: 20px; right: 20px;
     z-index: 50;
     background: rgba(8,8,8,0.8);
     border: 1px solid var(--border);
@@ -135,6 +188,16 @@
   #controls-toggle:hover { border-color: var(--accent); color: var(--accent); }
   #controls-toggle .icon { font-size: 14px; }
 
+  /* Keyboard hint */
+  .kbd-hint {
+    font-size: 9px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin-left: 2px;
+  }
+
   /* Controls panel */
   #controls-panel {
     position: absolute;
@@ -152,10 +215,7 @@
     flex-direction: column;
     gap: 24px;
   }
-
-  #controls-panel.open {
-    transform: translateX(0);
-  }
+  #controls-panel.open { transform: translateX(0); }
 
   .panel-title {
     font-family: 'DM Serif Display', serif;
@@ -163,13 +223,30 @@
     color: var(--accent);
     padding-bottom: 12px;
     border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
-  .ctrl-group {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+  /* Copy link button */
+  .copy-btn {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    white-space: nowrap;
   }
+  .copy-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .copy-btn.copied { border-color: var(--accent2); color: var(--accent2); }
+
+  .ctrl-group { display: flex; flex-direction: column; gap: 16px; }
 
   .ctrl-group-label {
     font-size: 9px;
@@ -180,11 +257,7 @@
     border-bottom: 1px solid var(--border);
   }
 
-  .ctrl-row {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-  }
+  .ctrl-row { display: flex; flex-direction: column; gap: 5px; }
 
   .ctrl-label {
     display: flex;
@@ -193,7 +266,6 @@
     color: var(--text);
     font-size: 11px;
   }
-
   .ctrl-label .val {
     color: var(--accent2);
     font-size: 10px;
@@ -203,8 +275,7 @@
 
   input[type=range] {
     -webkit-appearance: none;
-    width: 100%;
-    height: 2px;
+    width: 100%; height: 2px;
     background: var(--border);
     border-radius: 2px;
     outline: none;
@@ -246,6 +317,7 @@
     gap: 8px;
   }
   .checkbox-row label { font-size: 11px; color: var(--text); flex: 1; }
+
   .badge-gpu {
     font-size: 8px;
     letter-spacing: 0.06em;
@@ -256,7 +328,6 @@
     border-radius: 3px;
   }
 
-  /* toggle switch */
   .toggle {
     position: relative;
     width: 32px; height: 18px;
@@ -264,8 +335,7 @@
   }
   .toggle input { opacity: 0; width: 0; height: 0; }
   .toggle-track {
-    position: absolute;
-    inset: 0;
+    position: absolute; inset: 0;
     background: var(--border);
     border-radius: 18px;
     cursor: pointer;
@@ -293,8 +363,7 @@
   /* ── SCROLL INDICATOR ── */
   .scroll-hint {
     position: absolute;
-    bottom: 24px;
-    left: 50%;
+    bottom: 24px; left: 50%;
     transform: translateX(-50%);
     display: flex;
     flex-direction: column;
@@ -309,13 +378,41 @@
   }
   .scroll-hint::after {
     content: '';
-    width: 1px;
-    height: 28px;
+    width: 1px; height: 28px;
     background: linear-gradient(to bottom, var(--muted), transparent);
   }
   @keyframes bob {
     0%, 100% { transform: translateX(-50%) translateY(0); }
-    50% { transform: translateX(-50%) translateY(6px); }
+    50%       { transform: translateX(-50%) translateY(6px); }
+  }
+
+  /* ── MOBILE OVERLAY ── */
+  #mobile-notice {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(8,8,8,0.92);
+    backdrop-filter: blur(12px);
+    z-index: 60;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 32px;
+    text-align: center;
+  }
+  #mobile-notice .m-icon { font-size: 36px; }
+  #mobile-notice h3 {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    color: var(--accent);
+  }
+  #mobile-notice p { color: var(--muted); font-size: 12px; max-width: 280px; margin: 0; }
+  #mobile-notice a {
+    color: var(--accent2);
+    text-decoration: none;
+    font-size: 11px;
+    border-bottom: 1px solid var(--accent2);
   }
 
   /* ── SECTIONS ── */
@@ -323,6 +420,7 @@
     max-width: 900px;
     margin: 0 auto;
     padding: 96px 32px;
+    scroll-margin-top: 72px;
   }
 
   .section-tag {
@@ -342,11 +440,7 @@
     color: var(--accent);
     margin-bottom: 24px;
   }
-
-  h2 em {
-    font-style: italic;
-    color: var(--muted);
-  }
+  h2 em { font-style: italic; color: var(--muted); }
 
   p {
     color: var(--muted);
@@ -355,11 +449,37 @@
     margin-bottom: 16px;
   }
 
+  /* ── STORY SECTION ── */
+  .story-block {
+    margin-top: 40px;
+    border-left: 2px solid var(--border);
+    padding-left: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+  }
+
+  .story-item { display: flex; flex-direction: column; gap: 4px; }
+
+  .story-year {
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--accent2);
+    text-transform: uppercase;
+  }
+
+  .story-text {
+    font-size: 12px;
+    color: var(--muted);
+    max-width: 480px;
+    line-height: 1.7;
+    margin: 0;
+  }
+
   /* ── INSTALL STEPS ── */
   .steps {
     display: flex;
     flex-direction: column;
-    gap: 0;
     margin-top: 40px;
   }
 
@@ -369,7 +489,6 @@
     gap: 0 20px;
     padding: 28px 0;
     border-bottom: 1px solid var(--border);
-    position: relative;
   }
   .step:first-child { border-top: 1px solid var(--border); }
 
@@ -390,12 +509,7 @@
     margin-bottom: 6px;
     letter-spacing: 0.02em;
   }
-
-  .step-content p {
-    margin: 0;
-    font-size: 12px;
-  }
-
+  .step-content p { margin: 0; font-size: 12px; }
   .step-content a {
     color: var(--accent2);
     text-decoration: none;
@@ -403,6 +517,14 @@
     transition: border-color 0.2s;
   }
   .step-content a:hover { border-color: var(--accent2); }
+
+  code {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 11px;
+  }
 
   /* ── PROPERTIES GRID ── */
   .props-grid {
@@ -449,13 +571,11 @@
     align-items: center;
     color: var(--muted);
     font-size: 11px;
+    flex-wrap: wrap;
+    gap: 12px;
   }
 
-  footer a {
-    color: var(--muted);
-    text-decoration: none;
-    transition: color 0.2s;
-  }
+  footer a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
   footer a:hover { color: var(--text); }
 
   .footer-logo {
@@ -464,12 +584,10 @@
     color: var(--accent);
   }
 
+  .footer-links { display: flex; gap: 20px; align-items: center; }
+
   /* ── DIVIDER ── */
-  .full-divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 0;
-  }
+  .full-divider { border: none; border-top: 1px solid var(--border); margin: 0; }
 
   /* ── FADE IN ── */
   .fade-up {
@@ -477,9 +595,22 @@
     transform: translateY(24px);
     transition: opacity 0.6s ease, transform 0.6s ease;
   }
-  .fade-up.visible {
-    opacity: 1;
-    transform: translateY(0);
+  .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+  /* stagger children */
+  .fade-up:nth-child(2) { transition-delay: 0.08s; }
+  .fade-up:nth-child(3) { transition-delay: 0.16s; }
+  .fade-up:nth-child(4) { transition-delay: 0.24s; }
+
+  /* ── MOBILE ── */
+  @media (max-width: 640px) {
+    nav { padding: 0 16px; }
+    .nav-links { display: none; }
+    section { padding: 64px 20px; }
+    .props-grid { grid-template-columns: 1fr; }
+    footer { flex-direction: column; align-items: flex-start; }
+    #mobile-notice { display: flex; }
+    .kbd-hint { display: none; }
   }
 </style>
 </head>
@@ -490,12 +621,11 @@
   <span class="nav-logo">Bubbles</span>
   <ul class="nav-links">
     <li><a href="#preview-section">Preview</a></li>
+    <li><a href="#story">Story</a></li>
     <li><a href="#install">Install</a></li>
     <li><a href="#properties">Properties</a></li>
   </ul>
-  <a class="nav-cta" href="https://github.com/toomcis/Bubbles/releases/latest" target="_blank">
-    ↓ Download
-  </a>
+  <a class="nav-cta" href="https://github.com/toomcis/Bubbles/releases/latest" target="_blank">↓ Download</a>
 </nav>
 
 <!-- PREVIEW -->
@@ -503,74 +633,68 @@
   <div id="preview-wrap">
     <iframe id="bubbles-frame" src="bubbles.html" scrolling="no"></iframe>
 
+    <!-- Mobile notice -->
+    <div id="mobile-notice">
+      <div class="m-icon">🖥️</div>
+      <h3>Desktop app</h3>
+      <p>Bubbles is a wallpaper for Windows. The live preview works best on desktop — but you can still <a href="https://github.com/toomcis/Bubbles/releases/latest">download it</a> and install it with Lively Wallpaper.</p>
+    </div>
+
     <button id="controls-toggle" onclick="togglePanel()">
-      <span class="icon">⚙</span> Customize
+      <span class="icon">⚙</span> Customize <span class="kbd-hint">Space</span>
     </button>
 
     <!-- CONTROLS PANEL -->
     <div id="controls-panel">
-      <div class="panel-title">Controls</div>
+      <div class="panel-title">
+        Controls
+        <button class="copy-btn" id="copy-btn" onclick="copyLink()">⤴ Share settings</button>
+      </div>
 
       <div class="ctrl-group">
         <div class="ctrl-group-label">General</div>
-
         <div class="ctrl-row">
-          <div class="ctrl-label">Speed <span class="val" id="val-speed">1.0</span></div>
-          <input type="range" min="0" max="10" step="0.01" value="1" oninput="send('speed', this.value, 'val-speed')">
+          <div class="ctrl-label">Speed <span class="val" id="val-speed">1.000</span></div>
+          <input type="range" id="r-speed" min="0" max="10" step="0.01" value="1" oninput="send('speed', this.value, 'val-speed')">
         </div>
-
         <div class="color-row">
           <label>Line Color</label>
-          <input type="color" value="#ffffff" oninput="send('lnColor', this.value)">
+          <input type="color" id="r-lnColor" value="#ffffff" oninput="send('lnColor', this.value)">
         </div>
-
         <div class="color-row">
           <label>Background Color</label>
-          <input type="color" value="#000000" oninput="send('bgColor', this.value)">
+          <input type="color" id="r-bgColor" value="#000000" oninput="send('bgColor', this.value)">
         </div>
       </div>
 
       <div class="ctrl-group">
         <div class="ctrl-group-label">Shape</div>
-
         <div class="ctrl-row">
-          <div class="ctrl-label">
-            Density
-            <span class="val" id="val-density">0.50</span>
-          </div>
-          <input type="range" min="0" max="1" step="0.001" value="0.5" oninput="send('density', this.value, 'val-density')">
+          <div class="ctrl-label">Density <span class="val" id="val-density">0.500</span></div>
+          <input type="range" id="r-density" min="0" max="1" step="0.001" value="0.5" oninput="send('density', this.value, 'val-density')">
           <span class="hint">0.5 = most blobs &nbsp;·&nbsp; 0 or 1 = empty</span>
         </div>
-
         <div class="ctrl-row">
-          <div class="ctrl-label">
-            Thickness
-            <span class="val" id="val-thickness">0.003</span>
-          </div>
-          <input type="range" min="0" max="0.5" step="0.001" value="0.003" oninput="send('thickness', this.value, 'val-thickness')">
+          <div class="ctrl-label">Thickness <span class="val" id="val-thickness">0.003</span></div>
+          <input type="range" id="r-thickness" min="0" max="0.5" step="0.001" value="0.003" oninput="send('thickness', this.value, 'val-thickness')">
           <span class="hint">Slide to max for filled blobs</span>
         </div>
       </div>
 
       <div class="ctrl-group">
         <div class="ctrl-group-label">Quality</div>
-
         <div class="checkbox-row">
           <label>Uniform Line Width</label>
           <span class="badge-gpu">GPU HEAVY</span>
           <label class="toggle">
-            <input type="checkbox" id="chk-uniform" onchange="send('uniformThickness', this.checked)">
+            <input type="checkbox" id="r-uniform" onchange="send('uniformThickness', this.checked)">
             <div class="toggle-track"></div>
             <div class="toggle-thumb"></div>
           </label>
         </div>
-
         <div class="ctrl-row" id="darken-row" style="opacity:0.3;pointer-events:none">
-          <div class="ctrl-label">
-            Interior Brightness
-            <span class="val" id="val-darken">0.15</span>
-          </div>
-          <input type="range" min="0" max="1" step="0.01" value="0.15" oninput="send('darken', this.value, 'val-darken')">
+          <div class="ctrl-label">Interior Brightness <span class="val" id="val-darken">0.150</span></div>
+          <input type="range" id="r-darken" min="0" max="1" step="0.01" value="0.15" oninput="send('darken', this.value, 'val-darken')">
           <span class="hint">Only active in Uniform mode</span>
         </div>
       </div>
@@ -579,6 +703,34 @@
 
   <div class="scroll-hint">scroll</div>
 </div>
+
+<hr class="full-divider">
+
+<!-- STORY -->
+<section id="story">
+  <div class="section-tag fade-up">Origin</div>
+  <h2 class="fade-up">A wallpaper with <em>a history.</em></h2>
+  <p class="fade-up">Bubbles started as a personal project and quietly evolved over two years — shaped by hand, iterated with every tool available, and refined into something genuinely worth sharing.</p>
+
+  <div class="story-block">
+    <div class="story-item fade-up">
+      <span class="story-year">~ 2024 — The beginning</span>
+      <p class="story-text">Written from scratch by hand. The core idea: a WebGL noise shader that draws smooth organic blob shapes as a live wallpaper for Lively.</p>
+    </div>
+    <div class="story-item fade-up">
+      <span class="story-year">2024 — First iteration</span>
+      <p class="story-text">ChatGPT helped push the shader further — better noise, smoother curves, the first pass at configurable properties.</p>
+    </div>
+    <div class="story-item fade-up">
+      <span class="story-year">2025 — Refinement</span>
+      <p class="story-text">Gemini joined the process. The property system got cleaner, the effect more controllable. The gap between "cool demo" and "real wallpaper" started closing.</p>
+    </div>
+    <div class="story-item fade-up">
+      <span class="story-year">2026 — The uniform thickness problem</span>
+      <p class="story-text">Claude cracked the hardest part: truly uniform line width. By computing the noise gradient in pixel space, the border now stays consistent everywhere — no more thin pinches on tight curves. This page exists because of that conversation.</p>
+    </div>
+  </div>
+</section>
 
 <hr class="full-divider">
 
@@ -614,7 +766,7 @@
       <div class="step-num">04</div>
       <div class="step-content">
         <h3>Customize to your heart's content</h3>
-        <p>Use Lively's settings panel to tweak colors, speed, thickness, and more. Try the live preview above to find your perfect settings first.</p>
+        <p>Use Lively's settings panel or tune your settings here first using the live preview above, then hit <strong style="color:var(--text)">Share settings</strong> to copy the exact values.</p>
       </div>
     </div>
   </div>
@@ -635,15 +787,15 @@
     </div>
     <div class="prop-card">
       <div class="prop-name">Line Color</div>
-      <p class="prop-desc">The color of the blob outlines or fill. Works with any color — try pastels against a dark background.</p>
+      <p class="prop-desc">Color of the blob outlines or fill. Works with anything — try pastels against a dark background.</p>
     </div>
     <div class="prop-card">
       <div class="prop-name">Background Color</div>
-      <p class="prop-desc">The empty space between blobs. Pair with Line Color for maximum contrast or go subtle with similar tones.</p>
+      <p class="prop-desc">The empty space between blobs. Pair with Line Color for contrast, or go subtle with similar tones.</p>
     </div>
     <div class="prop-card">
       <div class="prop-name">Density</div>
-      <p class="prop-desc">Controls how many blobs appear. 0.5 is the densest. Moving toward 0 or 1 thins them out — it's not linear, think of it as tuning a frequency.</p>
+      <p class="prop-desc">Controls how many blobs appear. 0.5 is the densest. Moving toward 0 or 1 thins them out — think of it as tuning a frequency.</p>
     </div>
     <div class="prop-card">
       <div class="prop-name">Thickness</div>
@@ -651,15 +803,13 @@
     </div>
     <div class="prop-card">
       <div class="prop-name">Uniform Line Width <span class="badge-gpu">GPU HEAVY</span></div>
-      <p class="prop-desc">Computes pixel-accurate border width so lines stay consistent everywhere — no thin pinches on tight curves. Uses extra GPU.</p>
+      <p class="prop-desc">Computes pixel-accurate border width so lines stay consistent everywhere — no thin pinches on tight curves. Uses extra GPU per frame.</p>
     </div>
     <div class="prop-card">
       <div class="prop-name">Interior Brightness</div>
-      <p class="prop-desc">Only active in Uniform mode. Controls how bright the blob interiors are. 0 = background color, 1 = line color.</p>
+      <p class="prop-desc">Only active in Uniform mode. Controls how bright blob interiors are. 0 = background color, 1 = line color.</p>
     </div>
-    <div class="prop-card" style="background: var(--bg);">
-      <!-- intentional empty for grid balance -->
-    </div>
+    <div class="prop-card" style="background:var(--bg)"></div>
   </div>
 </section>
 
@@ -668,39 +818,115 @@
 <!-- FOOTER -->
 <footer>
   <span class="footer-logo">Bubbles</span>
-  <span>Made by <s>Claude</s> <a href="https://github.com/toomcis" target="_blank">Toomcis</a> :D</span>
-  <a href="https://github.com/toomcis/Bubbles" target="_blank">View on GitHub →</a>
+  <span>Made by <s style="color:var(--muted)">ChatGPT, Gemini, Claude</s> <a href="https://toomcis.eu" target="_blank">Toomcis</a> :D</span>
+  <div class="footer-links">
+    <a href="https://github.com/toomcis/Bubbles" target="_blank">GitHub →</a>
+    <a href="https://github.com/toomcis/Bubbles/releases/latest" target="_blank">Download →</a>
+  </div>
 </footer>
 
 <script>
+  // ── Load settings from URL params ──────────────────────────────
+  (function loadFromURL() {
+    const p = new URLSearchParams(window.location.search);
+    const map = {
+      speed:     { id: 'r-speed',     label: 'val-speed',     prop: 'speed' },
+      density:   { id: 'r-density',   label: 'val-density',   prop: 'density' },
+      thickness: { id: 'r-thickness', label: 'val-thickness', prop: 'thickness' },
+      darken:    { id: 'r-darken',    label: 'val-darken',    prop: 'darken' },
+      lnColor:   { id: 'r-lnColor',   label: null,            prop: 'lnColor' },
+      bgColor:   { id: 'r-bgColor',   label: null,            prop: 'bgColor' },
+    };
+    window._pendingParams = [];
+    for (const [key, cfg] of Object.entries(map)) {
+      if (p.has(key)) {
+        const val = decodeURIComponent(p.get(key));
+        const el = document.getElementById(cfg.id);
+        if (el) {
+          el.value = val;
+          if (cfg.label) {
+            const v = parseFloat(val);
+            const lbl = document.getElementById(cfg.label);
+            if (lbl) lbl.textContent = isNaN(v) ? val : v.toFixed(3);
+          }
+        }
+        window._pendingParams.push({ name: cfg.prop, val });
+      }
+    }
+    if (p.has('uniform')) {
+      const chk = document.getElementById('r-uniform');
+      chk.checked = p.get('uniform') === '1';
+      window._pendingParams.push({ name: 'uniformThickness', val: chk.checked });
+      const row = document.getElementById('darken-row');
+      row.style.opacity = chk.checked ? '1' : '0.3';
+      row.style.pointerEvents = chk.checked ? 'auto' : 'none';
+    }
+  })();
+
   // ── Panel toggle ──────────────────────────────────────────────
   function togglePanel() {
     const panel = document.getElementById('controls-panel');
     const btn   = document.getElementById('controls-toggle');
     const open  = panel.classList.toggle('open');
     btn.innerHTML = open
-      ? '<span class="icon">✕</span> Close'
-      : '<span class="icon">⚙</span> Customize';
+      ? '<span class="icon">✕</span> Close <span class="kbd-hint">Space</span>'
+      : '<span class="icon">⚙</span> Customize <span class="kbd-hint">Space</span>';
   }
+
+  // Space key shortcut
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' && e.target === document.body) {
+      e.preventDefault();
+      togglePanel();
+    }
+  });
 
   // ── Send property to iframe ───────────────────────────────────
   function send(name, val, labelId) {
-    const frame = document.getElementById('bubbles-frame');
     if (labelId) {
       const v = parseFloat(val);
       document.getElementById(labelId).textContent = isNaN(v) ? val : v.toFixed(3);
     }
-    // Toggle darken row visibility
     if (name === 'uniformThickness') {
       const row = document.getElementById('darken-row');
       row.style.opacity = val ? '1' : '0.3';
       row.style.pointerEvents = val ? 'auto' : 'none';
     }
     try {
-      frame.contentWindow.livelyPropertyListener(name, val);
+      document.getElementById('bubbles-frame').contentWindow.livelyPropertyListener(name, val);
     } catch(e) {
       console.warn('Could not reach iframe:', e);
     }
+  }
+
+  // ── Apply URL params once iframe loads ─────────────────────────
+  document.getElementById('bubbles-frame').addEventListener('load', () => {
+    if (window._pendingParams && window._pendingParams.length) {
+      window._pendingParams.forEach(({ name, val }) => send(name, val, null));
+    }
+  });
+
+  // ── Copy shareable link ────────────────────────────────────────
+  function copyLink() {
+    const params = new URLSearchParams();
+    params.set('speed',     document.getElementById('r-speed').value);
+    params.set('density',   document.getElementById('r-density').value);
+    params.set('thickness', document.getElementById('r-thickness').value);
+    params.set('darken',    document.getElementById('r-darken').value);
+    params.set('lnColor',   document.getElementById('r-lnColor').value);
+    params.set('bgColor',   document.getElementById('r-bgColor').value);
+    params.set('uniform',   document.getElementById('r-uniform').checked ? '1' : '0');
+
+    const url = `${location.origin}${location.pathname}?${params.toString()}`;
+    navigator.clipboard.writeText(url).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = '✓ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = '⤴ Share settings';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
   }
 
   // ── Scroll fade-in ────────────────────────────────────────────
@@ -711,8 +937,7 @@
         observer.unobserve(e.target);
       }
     });
-  }, { threshold: 0.15 });
-
+  }, { threshold: 0.12 });
   document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 </script>
 

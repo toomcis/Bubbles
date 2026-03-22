@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>404 — Bubbles</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080808;
+    --border: #222222;
+    --text: #e8e8e0;
+    --muted: #555550;
+    --accent: #ffffff;
+    --accent2: #c8ff6e;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .wrap {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    opacity: 0;
+    animation: fadeIn 0.5s ease 0.1s forwards;
+  }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  .num {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(80px, 18vw, 160px);
+    color: var(--border);
+    line-height: 1;
+    letter-spacing: -0.04em;
+    user-select: none;
+  }
+
+  .msg {
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  .redirect-line {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 8px;
+  }
+
+  .dot-track {
+    display: flex;
+    gap: 5px;
+  }
+
+  .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--border);
+  }
+  .dot.active { background: var(--accent2); }
+
+  a {
+    color: var(--accent2);
+    text-decoration: none;
+    font-size: 11px;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  a:hover { border-color: var(--accent2); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="num">404</div>
+  <div class="msg">Nothing here.</div>
+  <div class="redirect-line">
+    Redirecting to Bubbles in <span id="count">3</span>s
+    <div class="dot-track">
+      <div class="dot active" id="d1"></div>
+      <div class="dot" id="d2"></div>
+      <div class="dot" id="d3"></div>
+    </div>
+  </div>
+  <a href="/">Take me there now →</a>
+</div>
+
+<script>
+  let t = 3;
+  const count = document.getElementById('count');
+  const dots = [document.getElementById('d1'), document.getElementById('d2'), document.getElementById('d3')];
+
+  const tick = setInterval(() => {
+    t--;
+    count.textContent = t;
+    dots.forEach((d, i) => d.classList.toggle('active', i < t));
+    if (t <= 0) {
+      clearInterval(tick);
+      window.location.href = '/';
+    }
+  }, 1000);
+</script>
+</body>
+</html>
