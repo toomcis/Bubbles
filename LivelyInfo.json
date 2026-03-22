@@ -1,6 +1,6 @@
 {
   "AppVersion": "2.0.0",
-  "Title": "Bubbles 2",
+  "Title": "Bubbles",
   "Thumbnail": "t.jpg",
   "Preview": "p.gif",
   "Desc": "Bubble topography effect generated using shaders.",

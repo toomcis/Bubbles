@@ -19,7 +19,7 @@
   },
   "splitter1": {
     "type": "label",
-    "value": "── Shape ──────────────────"
+    "value": "Shape"
   },
   "density": {
     "max": 1.0,
@@ -39,7 +39,7 @@
   },
   "splitter2": {
     "type": "label",
-    "value": "── Quality ─────────────────"
+    "value": "Uniform Mode"
   },
   "uniformThickness": {
     "text": "Uniform Line Width  (GPU HEAVY)",
@@ -50,7 +50,7 @@
     "max": 1.0,
     "min": 0.0,
     "step": 0.01,
-    "text": "Interior Brightness  (Uniform mode only)",
+    "text": "Interior Brightness",
     "type": "slider",
     "value": 0.15
   }
