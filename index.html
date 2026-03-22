@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bubbles</title>
+<style>
+  html, body, canvas {
+    margin: 0; padding: 0;
+    width: 100%; height: 100%;
+    display: block;
+    background: black;
+    overflow: hidden;
+  }
+</style>
+</head>
+<body>
+<canvas id="glcanvas"></canvas>
+
+<script>
+const canvas = document.getElementById("glcanvas");
+const gl = canvas.getContext("webgl");
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+}
+window.addEventListener("resize", resize);
+resize();
+
+const vsSource = `
+attribute vec4 aPosition;
+void main() { gl_Position = aPosition; }
+`;
+
+const fsSource = `
+precision highp float;
+uniform vec2  iResolution;
+uniform float iTime;
+uniform float uSpeed;
+uniform float uDensity;
+uniform float uThickness;
+uniform int   uUniformThickness;
+uniform float uDarken;
+uniform vec3  uLnColor;
+uniform vec3  uBgColor;
+
+float random(vec3 x) {
+  return fract(sin(dot(x, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
+}
+
+float interpolate(float a, float b, float c, float d, float x) {
+  float p = (d - c) - (a - b);
+  return x * (x * (x * p + ((a - b) - p)) + (c - a)) + b;
+}
+
+float sampleX(vec3 at) {
+  float f = floor(at.x);
+  return interpolate(
+    random(vec3(f - 1.0, at.yz)),
+    random(vec3(f,       at.yz)),
+    random(vec3(f + 1.0, at.yz)),
+    random(vec3(f + 2.0, at.yz)),
+    at.x - f) * 0.5 + 0.25;
+}
+
+float sampleY(vec3 at) {
+  float f = floor(at.y);
+  return interpolate(
+    sampleX(vec3(at.x, f - 1.0, at.z)),
+    sampleX(vec3(at.x, f,       at.z)),
+    sampleX(vec3(at.x, f + 1.0, at.z)),
+    sampleX(vec3(at.x, f + 2.0, at.z)),
+    at.y - f);
+}
+
+float cubicNoise(vec3 at) {
+  float f = floor(at.z);
+  return interpolate(
+    sampleY(vec3(at.xy, f - 1.0)),
+    sampleY(vec3(at.xy, f)),
+    sampleY(vec3(at.xy, f + 1.0)),
+    sampleY(vec3(at.xy, f + 2.0)),
+    at.z - f);
+}
+
+// Returns noise value for a given screen pixel coordinate
+float noiseAtPixel(vec2 px, float t) {
+  vec2 coords = px * 0.0025;
+  vec3 X = vec3(coords, t);
+  X = mat3(
+     0.788675, -0.211325, -0.577350,
+    -0.211325,  0.788675, -0.577350,
+     0.577350,  0.577350,  0.577350
+  ) * X;
+  return cubicNoise(X);
+}
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+  float t = iTime * uSpeed;
+  float n = noiseAtPixel(fragCoord, t);
+  bool inside = n < uDensity;
+
+  if (uThickness >= 0.5) {
+    // Filled mode
+    float mask = inside ? 1.0 : 0.0;
+    fragColor = vec4(mix(uBgColor, uLnColor, mask), 1.0);
+
+  } else if (uUniformThickness == 1) {
+    // True pixel-space uniform border (GPU HEAVY):
+    // Search outward in pixel steps to find the nearest edge crossing.
+    // This is brute force but gives genuinely uniform pixel-width borders.
+
+    // uThickness here = border width in pixels (scaled, max ~30px)
+    float borderPx = uThickness * 200.0;
+
+    if (inside) {
+      // We are inside — check if we are within borderPx pixels of the edge
+      // by sampling neighbors. We use the gradient to estimate distance to edge.
+      // dN/dx and dN/dy in pixel space:
+      float nx1 = noiseAtPixel(fragCoord + vec2(1.0, 0.0), t);
+      float nx2 = noiseAtPixel(fragCoord - vec2(1.0, 0.0), t);
+      float ny1 = noiseAtPixel(fragCoord + vec2(0.0, 1.0), t);
+      float ny2 = noiseAtPixel(fragCoord - vec2(0.0, 1.0), t);
+
+      // Gradient in pixels (rise per pixel)
+      float gx = (nx1 - nx2) * 0.5;
+      float gy = (ny1 - ny2) * 0.5;
+      float gradMagPx = length(vec2(gx, gy));
+      gradMagPx = max(gradMagPx, 0.00001);
+
+      // Estimated pixel distance to the iso-contour (uDensity)
+      float distToEdgePx = abs(n - uDensity) / gradMagPx;
+
+      if (distToEdgePx < borderPx) {
+        // Interior border strip
+        fragColor = vec4(uLnColor, 1.0);
+      } else {
+        // Deep interior — darkened
+        fragColor = vec4(mix(uBgColor, uLnColor, uDarken), 1.0);
+      }
+    } else {
+      // Outside the blob — background
+      fragColor = vec4(uBgColor, 1.0);
+    }
+
+  } else {
+    // Standard band
+    float halfW = uThickness * 0.5;
+    float lo = uDensity - halfW;
+    float hi = uDensity + halfW;
+    float mask = step(lo, n) * step(n, hi);
+    fragColor = vec4(mix(uBgColor, uLnColor, mask), 1.0);
+  }
+}
+
+void main() {
+  vec4 color;
+  mainImage(color, gl_FragCoord.xy);
+  gl_FragColor = color;
+}
+`;
+
+function compileShader(type, source) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, source);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    console.error("Shader error:", gl.getShaderInfoLog(s));
+    return null;
+  }
+  return s;
+}
+
+const program = gl.createProgram();
+gl.attachShader(program, compileShader(gl.VERTEX_SHADER,   vsSource));
+gl.attachShader(program, compileShader(gl.FRAGMENT_SHADER, fsSource));
+gl.linkProgram(program);
+if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+  console.error("Link error:", gl.getProgramInfoLog(program));
+}
+gl.useProgram(program);
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER,
+  new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]),
+  gl.STATIC_DRAW);
+const aPosLoc = gl.getAttribLocation(program, "aPosition");
+gl.enableVertexAttribArray(aPosLoc);
+gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 0, 0);
+
+const uRes             = gl.getUniformLocation(program, "iResolution");
+const uTime            = gl.getUniformLocation(program, "iTime");
+const uSpeedLoc        = gl.getUniformLocation(program, "uSpeed");
+const uDensityLoc      = gl.getUniformLocation(program, "uDensity");
+const uThicknessLoc    = gl.getUniformLocation(program, "uThickness");
+const uUniformThickLoc = gl.getUniformLocation(program, "uUniformThickness");
+const uDarkenLoc       = gl.getUniformLocation(program, "uDarken");
+const uLnColorLoc      = gl.getUniformLocation(program, "uLnColor");
+const uBgColorLoc      = gl.getUniformLocation(program, "uBgColor");
+
+const props = {
+  speed:            1.0,
+  lnColor:          [1.0, 1.0, 1.0],
+  bgColor:          [0.0, 0.0, 0.0],
+  density:          0.5,
+  thickness:        0.003,
+  uniformThickness: 0,
+  darken:           0.15
+};
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
+}
+
+function livelyPropertyListener(name, val) {
+  switch (name) {
+    case "speed":            props.speed            = parseFloat(val); break;
+    case "density":          props.density          = parseFloat(val); break;
+    case "thickness":        props.thickness        = parseFloat(val); break;
+    case "uniformThickness": props.uniformThickness = (val === true || val === "true") ? 1 : 0; break;
+    case "darken":           props.darken           = parseFloat(val); break;
+    case "lnColor":          props.lnColor          = hexToRgb(val); break;
+    case "bgColor":          props.bgColor          = hexToRgb(val); break;
+  }
+}
+
+function render(ms) {
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform2f(uRes,             canvas.width, canvas.height);
+  gl.uniform1f(uTime,            ms * 0.001);
+  gl.uniform1f(uSpeedLoc,        props.speed);
+  gl.uniform1f(uDensityLoc,      props.density);
+  gl.uniform1f(uThicknessLoc,    props.thickness);
+  gl.uniform1i(uUniformThickLoc, props.uniformThickness);
+  gl.uniform1f(uDarkenLoc,       props.darken);
+  gl.uniform3fv(uLnColorLoc,     props.lnColor);
+  gl.uniform3fv(uBgColorLoc,     props.bgColor);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+  requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
