@@ -2,247 +2,719 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Bubbles</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bubbles — Live Wallpaper by Toomcis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  html, body, canvas {
-    margin: 0; padding: 0;
-    width: 100%; height: 100%;
-    display: block;
-    background: black;
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080808;
+    --surface: #111111;
+    --border: #222222;
+    --text: #e8e8e0;
+    --muted: #666660;
+    --accent: #ffffff;
+    --accent2: #c8ff6e;
+    --radius: 6px;
+    --panel-w: 300px;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 32px;
+    height: 52px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(8,8,8,0.85);
+    backdrop-filter: blur(12px);
+  }
+
+  .nav-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 20px;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 28px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    color: var(--muted);
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .nav-links a:hover { color: var(--text); }
+
+  .nav-cta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--accent2);
+    color: #000;
+    padding: 7px 16px;
+    border-radius: var(--radius);
+    text-decoration: none;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: opacity 0.2s;
+  }
+  .nav-cta:hover { opacity: 0.85; }
+
+  /* ── HERO / PREVIEW ── */
+  #preview-section {
+    position: relative;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #preview-wrap {
+    position: relative;
+    flex: 1;
+    margin-top: 52px;
     overflow: hidden;
+  }
+
+  #bubbles-frame {
+    width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+  }
+
+  /* Controls toggle button */
+  #controls-toggle {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 50;
+    background: rgba(8,8,8,0.8);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: var(--radius);
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+    transition: border-color 0.2s, color 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #controls-toggle:hover { border-color: var(--accent); color: var(--accent); }
+  #controls-toggle .icon { font-size: 14px; }
+
+  /* Controls panel */
+  #controls-panel {
+    position: absolute;
+    top: 0; right: 0; bottom: 0;
+    width: var(--panel-w);
+    background: rgba(8,8,8,0.92);
+    border-left: 1px solid var(--border);
+    backdrop-filter: blur(16px);
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 40;
+    overflow-y: auto;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  #controls-panel.open {
+    transform: translateX(0);
+  }
+
+  .panel-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px;
+    color: var(--accent);
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ctrl-group {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .ctrl-group-label {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .ctrl-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .ctrl-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text);
+    font-size: 11px;
+  }
+
+  .ctrl-label .val {
+    color: var(--accent2);
+    font-size: 10px;
+    min-width: 36px;
+    text-align: right;
+  }
+
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { transform: scale(1.3); }
+
+  .color-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .color-row label { font-size: 11px; color: var(--text); }
+
+  input[type=color] {
+    -webkit-appearance: none;
+    width: 36px; height: 24px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    background: none;
+    cursor: pointer;
+    padding: 2px;
+  }
+  input[type=color]::-webkit-color-swatch-wrapper { padding: 0; }
+  input[type=color]::-webkit-color-swatch { border: none; border-radius: 2px; }
+
+  .checkbox-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .checkbox-row label { font-size: 11px; color: var(--text); flex: 1; }
+  .badge-gpu {
+    font-size: 8px;
+    letter-spacing: 0.06em;
+    background: #ff4d4d22;
+    color: #ff7070;
+    border: 1px solid #ff4d4d44;
+    padding: 2px 5px;
+    border-radius: 3px;
+  }
+
+  /* toggle switch */
+  .toggle {
+    position: relative;
+    width: 32px; height: 18px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-track {
+    position: absolute;
+    inset: 0;
+    background: var(--border);
+    border-radius: 18px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle input:checked + .toggle-track { background: var(--accent2); }
+  .toggle-thumb {
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 12px; height: 12px;
+    background: #000;
+    border-radius: 50%;
+    transition: transform 0.2s;
+    pointer-events: none;
+  }
+  .toggle input:checked ~ .toggle-thumb { transform: translateX(14px); }
+
+  .hint {
+    font-size: 10px;
+    color: var(--muted);
+    line-height: 1.4;
+    font-style: italic;
+  }
+
+  /* ── SCROLL INDICATOR ── */
+  .scroll-hint {
+    position: absolute;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    animation: bob 2s ease-in-out infinite;
+    pointer-events: none;
+  }
+  .scroll-hint::after {
+    content: '';
+    width: 1px;
+    height: 28px;
+    background: linear-gradient(to bottom, var(--muted), transparent);
+  }
+  @keyframes bob {
+    0%, 100% { transform: translateX(-50%) translateY(0); }
+    50% { transform: translateX(-50%) translateY(6px); }
+  }
+
+  /* ── SECTIONS ── */
+  section {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 96px 32px;
+  }
+
+  .section-tag {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-bottom: 16px;
+  }
+
+  h2 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(28px, 4vw, 42px);
+    font-weight: 400;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    margin-bottom: 24px;
+  }
+
+  h2 em {
+    font-style: italic;
+    color: var(--muted);
+  }
+
+  p {
+    color: var(--muted);
+    max-width: 560px;
+    line-height: 1.8;
+    margin-bottom: 16px;
+  }
+
+  /* ── INSTALL STEPS ── */
+  .steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-top: 40px;
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    gap: 0 20px;
+    padding: 28px 0;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+  .step:first-child { border-top: 1px solid var(--border); }
+
+  .step-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    color: var(--border);
+    line-height: 1;
+    padding-top: 4px;
+    user-select: none;
+  }
+
+  .step-content h3 {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+    letter-spacing: 0.02em;
+  }
+
+  .step-content p {
+    margin: 0;
+    font-size: 12px;
+  }
+
+  .step-content a {
+    color: var(--accent2);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.2s;
+  }
+  .step-content a:hover { border-color: var(--accent2); }
+
+  /* ── PROPERTIES GRID ── */
+  .props-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-top: 40px;
+  }
+
+  .prop-card {
+    background: var(--surface);
+    padding: 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .prop-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .prop-desc {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  footer a {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  footer a:hover { color: var(--text); }
+
+  .footer-logo {
+    font-family: 'DM Serif Display', serif;
+    font-size: 16px;
+    color: var(--accent);
+  }
+
+  /* ── DIVIDER ── */
+  .full-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0;
+  }
+
+  /* ── FADE IN ── */
+  .fade-up {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .fade-up.visible {
+    opacity: 1;
+    transform: translateY(0);
   }
 </style>
 </head>
 <body>
-<canvas id="glcanvas"></canvas>
+
+<!-- NAV -->
+<nav>
+  <span class="nav-logo">Bubbles</span>
+  <ul class="nav-links">
+    <li><a href="#preview-section">Preview</a></li>
+    <li><a href="#install">Install</a></li>
+    <li><a href="#properties">Properties</a></li>
+  </ul>
+  <a class="nav-cta" href="https://github.com/toomcis/Bubbles/releases/latest" target="_blank">
+    ↓ Download
+  </a>
+</nav>
+
+<!-- PREVIEW -->
+<div id="preview-section">
+  <div id="preview-wrap">
+    <iframe id="bubbles-frame" src="bubbles.html" scrolling="no"></iframe>
+
+    <button id="controls-toggle" onclick="togglePanel()">
+      <span class="icon">⚙</span> Customize
+    </button>
+
+    <!-- CONTROLS PANEL -->
+    <div id="controls-panel">
+      <div class="panel-title">Controls</div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-group-label">General</div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">Speed <span class="val" id="val-speed">1.0</span></div>
+          <input type="range" min="0" max="10" step="0.01" value="1" oninput="send('speed', this.value, 'val-speed')">
+        </div>
+
+        <div class="color-row">
+          <label>Line Color</label>
+          <input type="color" value="#ffffff" oninput="send('lnColor', this.value)">
+        </div>
+
+        <div class="color-row">
+          <label>Background Color</label>
+          <input type="color" value="#000000" oninput="send('bgColor', this.value)">
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-group-label">Shape</div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            Density
+            <span class="val" id="val-density">0.50</span>
+          </div>
+          <input type="range" min="0" max="1" step="0.001" value="0.5" oninput="send('density', this.value, 'val-density')">
+          <span class="hint">0.5 = most blobs &nbsp;·&nbsp; 0 or 1 = empty</span>
+        </div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-label">
+            Thickness
+            <span class="val" id="val-thickness">0.003</span>
+          </div>
+          <input type="range" min="0" max="0.5" step="0.001" value="0.003" oninput="send('thickness', this.value, 'val-thickness')">
+          <span class="hint">Slide to max for filled blobs</span>
+        </div>
+      </div>
+
+      <div class="ctrl-group">
+        <div class="ctrl-group-label">Quality</div>
+
+        <div class="checkbox-row">
+          <label>Uniform Line Width</label>
+          <span class="badge-gpu">GPU HEAVY</span>
+          <label class="toggle">
+            <input type="checkbox" id="chk-uniform" onchange="send('uniformThickness', this.checked)">
+            <div class="toggle-track"></div>
+            <div class="toggle-thumb"></div>
+          </label>
+        </div>
+
+        <div class="ctrl-row" id="darken-row" style="opacity:0.3;pointer-events:none">
+          <div class="ctrl-label">
+            Interior Brightness
+            <span class="val" id="val-darken">0.15</span>
+          </div>
+          <input type="range" min="0" max="1" step="0.01" value="0.15" oninput="send('darken', this.value, 'val-darken')">
+          <span class="hint">Only active in Uniform mode</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">scroll</div>
+</div>
+
+<hr class="full-divider">
+
+<!-- INSTALL -->
+<section id="install">
+  <div class="section-tag fade-up">Getting started</div>
+  <h2 class="fade-up">Up and running <em>in seconds.</em></h2>
+  <p class="fade-up">No setup, no dependencies. Just download and drop.</p>
+
+  <div class="steps">
+    <div class="step fade-up">
+      <div class="step-num">01</div>
+      <div class="step-content">
+        <h3>Grab the latest release</h3>
+        <p>Head to <a href="https://github.com/toomcis/Bubbles/releases/latest" target="_blank">github.com/toomcis/Bubbles → Releases</a> and download <code>Bubbles.zip</code>.</p>
+      </div>
+    </div>
+    <div class="step fade-up">
+      <div class="step-num">02</div>
+      <div class="step-content">
+        <h3>Open Lively Wallpaper</h3>
+        <p>If you don't have it yet, grab <a href="https://www.rocksdanister.com/lively/" target="_blank">Lively Wallpaper</a> — it's free and open source.</p>
+      </div>
+    </div>
+    <div class="step fade-up">
+      <div class="step-num">03</div>
+      <div class="step-content">
+        <h3>Drag and drop</h3>
+        <p>Drag <code>Bubbles.zip</code> straight into the Lively window. No extracting needed.</p>
+      </div>
+    </div>
+    <div class="step fade-up">
+      <div class="step-num">04</div>
+      <div class="step-content">
+        <h3>Customize to your heart's content</h3>
+        <p>Use Lively's settings panel to tweak colors, speed, thickness, and more. Try the live preview above to find your perfect settings first.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<hr class="full-divider">
+
+<!-- PROPERTIES -->
+<section id="properties">
+  <div class="section-tag fade-up">Reference</div>
+  <h2 class="fade-up">Every knob, <em>explained.</em></h2>
+  <p class="fade-up">All properties are accessible from Lively's built-in settings panel once the wallpaper is installed.</p>
+
+  <div class="props-grid fade-up">
+    <div class="prop-card">
+      <div class="prop-name">Speed</div>
+      <p class="prop-desc">How fast the blobs animate. 0 freezes them completely. Higher values give a more energetic, fluid feel.</p>
+    </div>
+    <div class="prop-card">
+      <div class="prop-name">Line Color</div>
+      <p class="prop-desc">The color of the blob outlines or fill. Works with any color — try pastels against a dark background.</p>
+    </div>
+    <div class="prop-card">
+      <div class="prop-name">Background Color</div>
+      <p class="prop-desc">The empty space between blobs. Pair with Line Color for maximum contrast or go subtle with similar tones.</p>
+    </div>
+    <div class="prop-card">
+      <div class="prop-name">Density</div>
+      <p class="prop-desc">Controls how many blobs appear. 0.5 is the densest. Moving toward 0 or 1 thins them out — it's not linear, think of it as tuning a frequency.</p>
+    </div>
+    <div class="prop-card">
+      <div class="prop-name">Thickness</div>
+      <p class="prop-desc">Width of the line band. Slide to maximum to switch into filled mode — solid blobs instead of outlines.</p>
+    </div>
+    <div class="prop-card">
+      <div class="prop-name">Uniform Line Width <span class="badge-gpu">GPU HEAVY</span></div>
+      <p class="prop-desc">Computes pixel-accurate border width so lines stay consistent everywhere — no thin pinches on tight curves. Uses extra GPU.</p>
+    </div>
+    <div class="prop-card">
+      <div class="prop-name">Interior Brightness</div>
+      <p class="prop-desc">Only active in Uniform mode. Controls how bright the blob interiors are. 0 = background color, 1 = line color.</p>
+    </div>
+    <div class="prop-card" style="background: var(--bg);">
+      <!-- intentional empty for grid balance -->
+    </div>
+  </div>
+</section>
+
+<hr class="full-divider">
+
+<!-- FOOTER -->
+<footer>
+  <span class="footer-logo">Bubbles</span>
+  <span>Made by <s>Claude</s> <a href="https://github.com/toomcis" target="_blank">Toomcis</a> :D</span>
+  <a href="https://github.com/toomcis/Bubbles" target="_blank">View on GitHub →</a>
+</footer>
 
 <script>
-const canvas = document.getElementById("glcanvas");
-const gl = canvas.getContext("webgl");
+  // ── Panel toggle ──────────────────────────────────────────────
+  function togglePanel() {
+    const panel = document.getElementById('controls-panel');
+    const btn   = document.getElementById('controls-toggle');
+    const open  = panel.classList.toggle('open');
+    btn.innerHTML = open
+      ? '<span class="icon">✕</span> Close'
+      : '<span class="icon">⚙</span> Customize';
+  }
 
-function resize() {
-  canvas.width  = window.innerWidth;
-  canvas.height = window.innerHeight;
-  gl.viewport(0, 0, canvas.width, canvas.height);
-}
-window.addEventListener("resize", resize);
-resize();
-
-const vsSource = `
-attribute vec4 aPosition;
-void main() { gl_Position = aPosition; }
-`;
-
-const fsSource = `
-precision highp float;
-uniform vec2  iResolution;
-uniform float iTime;
-uniform float uSpeed;
-uniform float uDensity;
-uniform float uThickness;
-uniform int   uUniformThickness;
-uniform float uDarken;
-uniform vec3  uLnColor;
-uniform vec3  uBgColor;
-
-float random(vec3 x) {
-  return fract(sin(dot(x, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
-}
-
-float interpolate(float a, float b, float c, float d, float x) {
-  float p = (d - c) - (a - b);
-  return x * (x * (x * p + ((a - b) - p)) + (c - a)) + b;
-}
-
-float sampleX(vec3 at) {
-  float f = floor(at.x);
-  return interpolate(
-    random(vec3(f - 1.0, at.yz)),
-    random(vec3(f,       at.yz)),
-    random(vec3(f + 1.0, at.yz)),
-    random(vec3(f + 2.0, at.yz)),
-    at.x - f) * 0.5 + 0.25;
-}
-
-float sampleY(vec3 at) {
-  float f = floor(at.y);
-  return interpolate(
-    sampleX(vec3(at.x, f - 1.0, at.z)),
-    sampleX(vec3(at.x, f,       at.z)),
-    sampleX(vec3(at.x, f + 1.0, at.z)),
-    sampleX(vec3(at.x, f + 2.0, at.z)),
-    at.y - f);
-}
-
-float cubicNoise(vec3 at) {
-  float f = floor(at.z);
-  return interpolate(
-    sampleY(vec3(at.xy, f - 1.0)),
-    sampleY(vec3(at.xy, f)),
-    sampleY(vec3(at.xy, f + 1.0)),
-    sampleY(vec3(at.xy, f + 2.0)),
-    at.z - f);
-}
-
-// Returns noise value for a given screen pixel coordinate
-float noiseAtPixel(vec2 px, float t) {
-  vec2 coords = px * 0.0025;
-  vec3 X = vec3(coords, t);
-  X = mat3(
-     0.788675, -0.211325, -0.577350,
-    -0.211325,  0.788675, -0.577350,
-     0.577350,  0.577350,  0.577350
-  ) * X;
-  return cubicNoise(X);
-}
-
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-  float t = iTime * uSpeed;
-  float n = noiseAtPixel(fragCoord, t);
-  bool inside = n < uDensity;
-
-  if (uThickness >= 0.5) {
-    // Filled mode
-    float mask = inside ? 1.0 : 0.0;
-    fragColor = vec4(mix(uBgColor, uLnColor, mask), 1.0);
-
-  } else if (uUniformThickness == 1) {
-    // True pixel-space uniform border (GPU HEAVY):
-    // Search outward in pixel steps to find the nearest edge crossing.
-    // This is brute force but gives genuinely uniform pixel-width borders.
-
-    // uThickness here = border width in pixels (scaled, max ~30px)
-    float borderPx = uThickness * 200.0;
-
-    if (inside) {
-      // We are inside — check if we are within borderPx pixels of the edge
-      // by sampling neighbors. We use the gradient to estimate distance to edge.
-      // dN/dx and dN/dy in pixel space:
-      float nx1 = noiseAtPixel(fragCoord + vec2(1.0, 0.0), t);
-      float nx2 = noiseAtPixel(fragCoord - vec2(1.0, 0.0), t);
-      float ny1 = noiseAtPixel(fragCoord + vec2(0.0, 1.0), t);
-      float ny2 = noiseAtPixel(fragCoord - vec2(0.0, 1.0), t);
-
-      // Gradient in pixels (rise per pixel)
-      float gx = (nx1 - nx2) * 0.5;
-      float gy = (ny1 - ny2) * 0.5;
-      float gradMagPx = length(vec2(gx, gy));
-      gradMagPx = max(gradMagPx, 0.00001);
-
-      // Estimated pixel distance to the iso-contour (uDensity)
-      float distToEdgePx = abs(n - uDensity) / gradMagPx;
-
-      if (distToEdgePx < borderPx) {
-        // Interior border strip
-        fragColor = vec4(uLnColor, 1.0);
-      } else {
-        // Deep interior — darkened
-        fragColor = vec4(mix(uBgColor, uLnColor, uDarken), 1.0);
-      }
-    } else {
-      // Outside the blob — background
-      fragColor = vec4(uBgColor, 1.0);
+  // ── Send property to iframe ───────────────────────────────────
+  function send(name, val, labelId) {
+    const frame = document.getElementById('bubbles-frame');
+    if (labelId) {
+      const v = parseFloat(val);
+      document.getElementById(labelId).textContent = isNaN(v) ? val : v.toFixed(3);
     }
-
-  } else {
-    // Standard band
-    float halfW = uThickness * 0.5;
-    float lo = uDensity - halfW;
-    float hi = uDensity + halfW;
-    float mask = step(lo, n) * step(n, hi);
-    fragColor = vec4(mix(uBgColor, uLnColor, mask), 1.0);
+    // Toggle darken row visibility
+    if (name === 'uniformThickness') {
+      const row = document.getElementById('darken-row');
+      row.style.opacity = val ? '1' : '0.3';
+      row.style.pointerEvents = val ? 'auto' : 'none';
+    }
+    try {
+      frame.contentWindow.livelyPropertyListener(name, val);
+    } catch(e) {
+      console.warn('Could not reach iframe:', e);
+    }
   }
-}
 
-void main() {
-  vec4 color;
-  mainImage(color, gl_FragCoord.xy);
-  gl_FragColor = color;
-}
-`;
+  // ── Scroll fade-in ────────────────────────────────────────────
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.15 });
 
-function compileShader(type, source) {
-  const s = gl.createShader(type);
-  gl.shaderSource(s, source);
-  gl.compileShader(s);
-  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
-    console.error("Shader error:", gl.getShaderInfoLog(s));
-    return null;
-  }
-  return s;
-}
-
-const program = gl.createProgram();
-gl.attachShader(program, compileShader(gl.VERTEX_SHADER,   vsSource));
-gl.attachShader(program, compileShader(gl.FRAGMENT_SHADER, fsSource));
-gl.linkProgram(program);
-if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-  console.error("Link error:", gl.getProgramInfoLog(program));
-}
-gl.useProgram(program);
-
-const buf = gl.createBuffer();
-gl.bindBuffer(gl.ARRAY_BUFFER, buf);
-gl.bufferData(gl.ARRAY_BUFFER,
-  new Float32Array([-1,-1, 1,-1, -1,1, -1,1, 1,-1, 1,1]),
-  gl.STATIC_DRAW);
-const aPosLoc = gl.getAttribLocation(program, "aPosition");
-gl.enableVertexAttribArray(aPosLoc);
-gl.vertexAttribPointer(aPosLoc, 2, gl.FLOAT, false, 0, 0);
-
-const uRes             = gl.getUniformLocation(program, "iResolution");
-const uTime            = gl.getUniformLocation(program, "iTime");
-const uSpeedLoc        = gl.getUniformLocation(program, "uSpeed");
-const uDensityLoc      = gl.getUniformLocation(program, "uDensity");
-const uThicknessLoc    = gl.getUniformLocation(program, "uThickness");
-const uUniformThickLoc = gl.getUniformLocation(program, "uUniformThickness");
-const uDarkenLoc       = gl.getUniformLocation(program, "uDarken");
-const uLnColorLoc      = gl.getUniformLocation(program, "uLnColor");
-const uBgColorLoc      = gl.getUniformLocation(program, "uBgColor");
-
-const props = {
-  speed:            1.0,
-  lnColor:          [1.0, 1.0, 1.0],
-  bgColor:          [0.0, 0.0, 0.0],
-  density:          0.5,
-  thickness:        0.003,
-  uniformThickness: 0,
-  darken:           0.15
-};
-
-function hexToRgb(hex) {
-  const n = parseInt(hex.slice(1), 16);
-  return [((n >> 16) & 255) / 255, ((n >> 8) & 255) / 255, (n & 255) / 255];
-}
-
-function livelyPropertyListener(name, val) {
-  switch (name) {
-    case "speed":            props.speed            = parseFloat(val); break;
-    case "density":          props.density          = parseFloat(val); break;
-    case "thickness":        props.thickness        = parseFloat(val); break;
-    case "uniformThickness": props.uniformThickness = (val === true || val === "true") ? 1 : 0; break;
-    case "darken":           props.darken           = parseFloat(val); break;
-    case "lnColor":          props.lnColor          = hexToRgb(val); break;
-    case "bgColor":          props.bgColor          = hexToRgb(val); break;
-  }
-}
-
-function render(ms) {
-  gl.clear(gl.COLOR_BUFFER_BIT);
-  gl.uniform2f(uRes,             canvas.width, canvas.height);
-  gl.uniform1f(uTime,            ms * 0.001);
-  gl.uniform1f(uSpeedLoc,        props.speed);
-  gl.uniform1f(uDensityLoc,      props.density);
-  gl.uniform1f(uThicknessLoc,    props.thickness);
-  gl.uniform1i(uUniformThickLoc, props.uniformThickness);
-  gl.uniform1f(uDarkenLoc,       props.darken);
-  gl.uniform3fv(uLnColorLoc,     props.lnColor);
-  gl.uniform3fv(uBgColorLoc,     props.bgColor);
-  gl.drawArrays(gl.TRIANGLES, 0, 6);
-  requestAnimationFrame(render);
-}
-
-requestAnimationFrame(render);
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
 </script>
+
 </body>
 </html>
