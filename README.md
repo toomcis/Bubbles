@@ -1,6 +1,6 @@
 # Bubbles
 
-A animated wallpaper for [Lively Wallpaper](https://www.rocksdanister.com/lively/) that generates smooth, flowing blob shapes using a WebGL cubic noise shader.
+A animated wallpaper for [Lively Wallpaper](https://www.rocksdanister.com/lively/) that generates smooth, flowing blob shapes using a WebGL cubic noise shader. Huge shoutout to https://github.com/jobtalle/CubicNoise who laid the foundations for this project with this awesome code
 
 ![Preview](p.gif)
 
